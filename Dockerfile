@@ -1,9 +1,8 @@
 FROM arm64v8/alpine
 
-ARG VERSION=4.6.2.2472
-#ARG REL=2472
-#ARG FULL_VER=${VERSION}.${REL}
-#ARG SOURCE
+ARG VERSION=4.6.2
+ARG REL=2472
+ARG FULL_VER=${VERSION}.${REL}
 
 RUN apk update && apk update
 
@@ -11,20 +10,19 @@ RUN apk add maven openjdk11
 
 WORKDIR /sonar-scanner-cli
 
-RUN wget https://github.com/SonarSource/sonar-scanner-cli/archive/refs/tags/${VERSION}.tar.gz
+RUN wget https://github.com/SonarSource/sonar-scanner-cli/archive/refs/tags/${FULL_VER}.tar.gz
 
-RUN tar -xvzf ${VERSION}.tar.gz
+RUN tar -xvzf ${FULL_VER}.tar.gz
 
-WORKDIR sonar-scanner-cli-${VERSION}/
+WORKDIR sonar-scanner-cli-${FULL_VER}/
 
 RUN mvn package 
 
-RUN pwd
-
-RUN ls -ls
 
 FROM arm64v8/alpine
-ARG VERSION=4.6.2.2472
+ARG VERSION=4.6.2
+ARG REL=2472
+ARG FULL_VER=${VERSION}.${REL}
 
 RUN apk update && apk update
 
@@ -32,15 +30,16 @@ RUN apk add openjdk11
 
 WORKDIR /sonar-scanner-cli
 
-COPY --from=0 /sonar-scanner-cli/sonar-scanner-cli-${VERSION}/target/sonar-scanner-4.6.2-SNAPSHOT.zip /opt
+COPY --from=0 /sonar-scanner-cli/sonar-scanner-cli-${FULL_VER}/target/sonar-scanner-${VERSION}-SNAPSHOT.zip /opt
 
 WORKDIR /opt
 
-RUN unzip sonar-scanner-4.6.2-SNAPSHOT.zip -d /opt/
+RUN unzip sonar-scanner-${VERSION}-SNAPSHOT.zip -d /opt/
 
-RUN mv /opt/sonar-scanner-4.6.2-SNAPSHOT /opt/sonar-scanner-4.6.2/
+RUN rm sonar-scanner-${VERSION}-SNAPSHOT.zip 
 
-RUN chmod 755 /opt/sonar-scanner-4.6.2/lib/*
-RUN ls -l /opt/sonar-scanner-4.6.2/lib/*
+RUN mv /opt/sonar-scanner-${VERSION}-SNAPSHOT /opt/sonar-scanner/
 
-ENTRYPOINT ["/opt/sonar-scanner-4.6.2/bin/sonar-scanner"]
+RUN chmod 755 /opt/sonar-scanner/lib/*
+
+ENTRYPOINT ["/opt/sonar-scanner/bin/sonar-scanner"]
